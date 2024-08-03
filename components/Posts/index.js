@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import Post from './Post';
 import Container from '../common/Container';
-import useWindowWidth from '../hooks/useWindowWidth';
+import { useWindowWidth } from '../context/WindowWidthContext';
 
 const PostListContainer = styled.div(() => ({
   display: 'flex',
