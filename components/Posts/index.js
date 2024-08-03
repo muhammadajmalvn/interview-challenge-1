@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import Post from './Post';
 import Container from '../common/Container';
-import useWindowWidth from '../hooks/useWindowWidth';
+import { useWindowWidth } from '../context/WindowWidthContext';
 
 const PostListContainer = styled.div(() => ({
   display: 'flex',
@@ -35,26 +35,33 @@ const LoadMoreButton = styled.button(() => ({
 export default function Posts() {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [startIndex, setStartIndex] = useState(0);
+  const [endIndex, setEndIndex] = useState(10);
+  const [morePosts, setMorePosts] = useState(true);
+  const limit = 10;
   const { isSmallerDevice } = useWindowWidth();
 
   useEffect(() => {
     const fetchPost = async () => {
-      const { data: posts } = await axios.get('/api/v1/posts', {
-        params: { start: 0, limit: isSmallerDevice ? 5 : 10 },
-      });
-      setPosts(posts);
+      try {
+        const { data: newPosts } = await axios.get('/api/v1/posts', {
+          params: { start: 0, limit: isSmallerDevice ? 5 : 10 },
+        });
+        setPosts(prevPosts=>[...prevPosts,...newPosts]);
+        setIsLoading(false)
+        if (newPosts.length < limit) {
+          setMorePosts(false);
+        }      
+      } catch (error) {
+        console.error(`Error fetching posts: ${error}`);
+      }
     };
-
     fetchPost();
-  }, [isSmallerDevice]);
+  }, [isSmallerDevice,startIndex,endIndex]);
 
   const handleClick = () => {
     setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+    setStartIndex(prevStartIndex => prevStartIndex + limit)
   };
 
   return (
@@ -66,9 +73,11 @@ export default function Posts() {
       </PostListContainer>
 
       <div style={{ display: 'flex', justifyContent: 'center' }}>
+        {morePosts &&(
         <LoadMoreButton onClick={handleClick} disabled={isLoading}>
           {!isLoading ? 'Load More' : 'Loading...'}
         </LoadMoreButton>
+        )}
       </div>
     </Container>
   );
